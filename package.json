@@ -18,7 +18,8 @@
     "build:unpack": "npm run build && electron-builder --dir",
     "build:win": "npm run build && electron-builder --win",
     "build:multilang": "node scripts/build-multilang.js",
-    "reset": "node scripts/reset-preferences.js"
+    "reset": "node scripts/reset-preferences.js",
+    "analyze": "npm run build && electron-builder --dir --config.compression=store"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.1",
@@ -55,13 +56,15 @@
   "build": {
     "appId": "com.aileck.phone2pad-desktop",
     "productName": "Phone2Pad Desktop Preview",
+    "compression": "maximum",
     "win": {
       "target": "nsis"
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "include": "installer.nsh"
+      "include": "installer.nsh",
+      "differentialPackage": true
     },
     "directories": {
       "buildResources": "resources",
@@ -77,9 +80,29 @@
         "from": "dlls",
         "to": "dlls",
         "filter": [
-          "**/*"
+          "**/*.dll",
+          "!**/*debug*",
+          "!**/*test*",
+          "!**/*.pdb"
         ]
       }
+    ],
+    "files": [
+      "out/**/*",
+      "node_modules/**/*",
+      "!node_modules/**/test/**",
+      "!node_modules/**/tests/**",
+      "!node_modules/**/*.md",
+      "!node_modules/**/README*",
+      "!node_modules/**/CHANGELOG*",
+      "!node_modules/**/LICENSE*",
+      "!node_modules/**/.git*",
+      "!node_modules/**/example*",
+      "!node_modules/**/examples/**",
+      "!node_modules/**/docs/**",
+      "!node_modules/**/*.d.ts",
+      "!node_modules/**/*.map",
+      "!**/node_modules/.cache/**"
     ]
   }
 }

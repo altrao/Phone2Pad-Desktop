@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { QuestionFilled, VideoCamera, Monitor } from '@element-plus/icons-vue'
 import { ElDialog, ElScrollbar, ElDivider, ElIcon, ElAlert, ElButton, ElRadioGroup, ElRadio, ElAffix } from 'element-plus'
@@ -11,10 +11,11 @@ declare global {
   }
 }
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const dialogVisible = ref(false)
 const currentLayout = ref<'xbox' | 'dualshock'>('xbox')
 const activeSection = ref('section1')
+const isChineseLocale = computed(() => locale.value === 'zh')
 
 interface ButtonState {
   isActive: boolean;
@@ -128,7 +129,7 @@ defineExpose({
             {{ t('help_section_1_title') }}
           </h3>
           <div class="help-text" v-html="t('help_section_1_content')"></div>
-          <div class="action-buttons">
+          <div class="action-buttons" v-if="!isChineseLocale">
             <a :href="t('help_video_url')" target="_blank" class="video-link">
               <el-icon><VideoCamera /></el-icon>
               {{ t('help_video_text') }}

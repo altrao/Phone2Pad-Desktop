@@ -31,7 +31,7 @@ export default {
   download_vigem_description: 'Install the ViGEm driver to enable gamepad emulation functionality.',
 
   download_on_itch_io: 'Download from itch.io',
-  download_on_github: 'Download from GitHub',
+  download_on_officialpage: 'Download from Official site',
   download_on_baidu: 'Download from Baidu Netdisk',
   download_contact_info: 'If the download links don’t work, contact Aileck on Bilibili:',
 
@@ -91,7 +91,7 @@ export default {
   sponsor_kofi: 'Sponsor via Ko-fi',
   sponsor_wechat: 'Sponsor via WeChat',
   sponsor_button_text: 'Open Alipay',
-  help_video_url: 'https://www.bilibili.com/video/xxx',
+  help_video_url: 'https://youtu.be/_g3Gj1y-bLg',
   help_video_text: 'Watch Tutorial Video',
   controller_customization: "Controller Customization",
   xbox_layout: "Xbox Layout",

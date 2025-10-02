@@ -31,7 +31,7 @@ export default {
   download_vigem_description: 'Instala el controlador ViGEm para habilitar la emulación de mandos.',
 
   download_on_itch_io: 'Descargar desde itch.io',
-  download_on_github: 'Descargar desde GitHub',
+  download_on_officialpage: 'Descargar desde la página oficial',
   download_on_baidu: 'Descargar desde Baidu',
   download_contact_info: 'Si los enlaces de descarga no funcionan, contacta con Aileck en Bilibili:',
 
@@ -91,7 +91,7 @@ export default {
   sponsor_kofi: 'Patrocinar por Ko-fi',
   sponsor_wechat: 'Patrocinio por WeChat',
   sponsor_button_text: 'Abrir Alipay',
-  help_video_url: 'https://www.bilibili.com/video/xxx',
+  help_video_url: 'https://youtu.be/_g3Gj1y-bLg',
   help_video_text: 'Ver vídeo tutorial',
   controller_customization: "Configuración de mandos",
   xbox_layout: "Diseño Xbox",

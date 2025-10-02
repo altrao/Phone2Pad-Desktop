@@ -38,7 +38,7 @@ defineExpose({
             <el-button 
               type="warning" 
               class="download-button"
-              @click="openLink('你的百度网盘链接')"
+              @click="openLink('https://pan.baidu.com/s/1cx8Q6CE8nFpDvS6VtPonQA?pwd=dtn3')"
             >
               <el-icon><Download /></el-icon>
               {{ t('download_on_baidu') }}
@@ -47,7 +47,7 @@ defineExpose({
           <el-button 
             type="primary" 
             class="download-button"
-            @click="openLink('https://aileck.itch.io/phonepad-web')"
+            @click="openLink('https://aileck.itch.io/phone2pad')"
           >
             <el-icon><Download /></el-icon>
             {{ t('download_on_itch_io') }}
@@ -65,7 +65,7 @@ defineExpose({
             <el-button 
               type="warning" 
               class="download-button"
-              @click="openLink('你的百度网盘链接')"
+              @click="openLink('https://pan.baidu.com/s/1cx8Q6CE8nFpDvS6VtPonQA?pwd=dtn3')"
             >
               <el-icon><Download /></el-icon>
               {{ t('download_on_baidu') }}
@@ -74,10 +74,10 @@ defineExpose({
           <el-button 
             type="primary" 
             class="download-button"
-            @click="openLink('https://github.com/nefarius/ViGEmBus/releases/download/v1.22.0/ViGEmBus_1.22.0_x64_x86_arm64.exe')"
+            @click="openLink('https://vigembus.com/')"
           >
             <el-icon><Download /></el-icon>
-            {{ t('download_on_github') }}
+            {{ t('download_on_officialpage') }}
           </el-button>
         </div>
       </div>
@@ -134,6 +134,7 @@ defineExpose({
 
 .download-button {
   width: 200px;
+  margin: 0;
 }
 
 .download-button .el-icon {

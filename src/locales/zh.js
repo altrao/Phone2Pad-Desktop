@@ -31,7 +31,7 @@ export default {
     download_vigem_description: '安装 ViGEm 驱动以支持手柄模拟功能。',
 
     download_on_itch_io: '从itch.io下载',
-    download_on_github: '从GitHub下载',
+    download_on_officialpage: '从官方网站下载',
     download_on_baidu: '从百度网盘下载',
     download_contact_info: '如果下载链接失效，请在B站联系 Aileck：',
 
