@@ -35,8 +35,8 @@ async function xboxInput(gamepadID: number, gamepadData: GamepadData, delayCount
   const normalizedLeftStick = normalizedXboxStick(gamepadData.leftStickX, gamepadData.leftStickY);
   const normalizedRightStick = normalizedXboxStick(gamepadData.rightStickX, gamepadData.rightStickY);
 
-  const normalizedLeftTrigger = normalizeTrigger(gamepadData.leftTrigger ? 1 : 0);
-  const normalizedRightTrigger = normalizeTrigger(gamepadData.rightTrigger ? 1 : 0);
+  const normalizedLeftTrigger = normalizeTrigger(gamepadData.leftTrigger);
+  const normalizedRightTrigger = normalizeTrigger(gamepadData.rightTrigger);
   
   xbox.input_a(gamepadID, gamepadData.buttonSouth);
   xbox.input_b(gamepadID, gamepadData.buttonEast);
@@ -72,8 +72,8 @@ async function dualShockInput(gamepadID: number, gamepadData: GamepadData, delay
   const normalizedLeftStick = normalizedDualShockStick(gamepadData.leftStickX, gamepadData.leftStickY);
   const normalizedRightStick = normalizedDualShockStick(gamepadData.rightStickX, gamepadData.rightStickY);
 
-  const normalizedLeftTrigger = normalizeTrigger(gamepadData.leftTrigger ? 1 : 0);
-  const normalizedRightTrigger = normalizeTrigger(gamepadData.rightTrigger ? 1 : 0);
+  const normalizedLeftTrigger = normalizeTrigger(gamepadData.leftTrigger);
+  const normalizedRightTrigger = normalizeTrigger(gamepadData.rightTrigger);
 
   dualshock4.input_square(gamepadID, gamepadData.buttonWest);
   dualshock4.input_cross(gamepadID, gamepadData.buttonSouth);
@@ -168,6 +168,15 @@ function normalizedDualShockStick(x: number, y: number): { x: number; y: number 
 }
 
 function normalizeTrigger(value: number): number {
+  // Guard against a missing/legacy boolean payload (true -> 1, false -> 0).
+  if (typeof value === 'boolean') {
+    value = value ? 1 : 0;
+  }
+
+  if (typeof value !== 'number' || Number.isNaN(value)) {
+    value = 0;
+  }
+
   // Clamp value between 0 and 1
   value = Math.max(0, Math.min(1, value));
 

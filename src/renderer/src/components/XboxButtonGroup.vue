@@ -21,8 +21,8 @@ const gamepadData = ref<GamepadData>({
   right: false,
   leftShoulder: false,
   rightShoulder: false,
-  leftTrigger: false,
-  rightTrigger: false,
+  leftTrigger: 0,
+  rightTrigger: 0,
   leftStickButton: false,
   rightStickButton: false,
   leftStickX: 0,
@@ -50,14 +50,14 @@ onMounted(() => {
     <div class="cabinet-section">
       <div class="cabinet-content">
         <component class="gamepad-button-small xbox" :is="commun.empty" />
-        <component class="gamepad-button-small xbox" :is="gamepadData.leftTrigger ? xbox.lt_press : xbox.lt_release" />
+        <component class="gamepad-button-small xbox" :is="gamepadData.leftTrigger > 0 ? xbox.lt_press : xbox.lt_release" />
         <component class="gamepad-button-small xbox" :is="gamepadData.leftShoulder ? xbox.lb_press : xbox.lb_release" />
         <component class="gamepad-button-small xbox" :is="commun.empty" />
         <component class="gamepad-button-small xbox" :is="gamepadData.buttonSelect ? xbox.back_press : xbox.back_release" />
         <component class="gamepad-button-small xbox" :is="gamepadData.buttonStart ? xbox.start_press : xbox.start_release" />
         <component class="gamepad-button-small xbox" :is="commun.empty" />
         <component class="gamepad-button-small xbox" :is="gamepadData.rightShoulder ? xbox.rb_press : xbox.rb_release" />
-        <component class="gamepad-button-small xbox" :is="gamepadData.rightTrigger ? xbox.rt_press : xbox.rt_release" />
+        <component class="gamepad-button-small xbox" :is="gamepadData.rightTrigger > 0 ? xbox.rt_press : xbox.rt_release" />
         <component class="gamepad-button-small xbox" :is="commun.empty" />
       </div>
     </div>

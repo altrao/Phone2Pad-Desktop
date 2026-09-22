@@ -1,4 +1,5 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
+import { GamepadData } from '../shared/types'
 
 type Gamepad_Result = {
   status: number;
@@ -21,7 +22,7 @@ declare global {
       create_ds4_controller: () => Promise<GamepadAPIResult>
 
       awake_wss: () => Promise<void>
-      get_server_ip: () => Promise<stirng>
+      get_server_ip: () => Promise<string>
       getMaxGamepads: () => Promise<number>
       write_to_log: (callback: (event: Event, message: string) => void) => void
       start_wss: (port: number) => Promise<void>
@@ -35,7 +36,7 @@ declare global {
       onGamepadDisconnected: (callback: (event: Event, data: { id: number }) => void) => void
       onServerStatus: (callback: (event: Event, data: { status: string, error?: string }) => void) => void
 
-      onXboxInput: (callback: (event: Event, data: { id: number, gamepadData: GamepadData }) => void) => void 
+      onXboxInput: (callback: (event: Event, data: { id: number, gamepadData: GamepadData }) => void) => void
       onDualShockInput: (callback: (event: Event, data: { id: number, gamepadData: GamepadData }) => void) => void
       
       onGetDelay: (callback: (event: Event, data: { id: number, delay: number }) => void) => void

@@ -21,8 +21,8 @@ const gamepadData = ref<GamepadData>({
   right: false,
   leftShoulder: false,
   rightShoulder: false,
-  leftTrigger: false,
-  rightTrigger: false,
+  leftTrigger: 0,
+  rightTrigger: 0,
   leftStickButton: false,
   rightStickButton: false,
   leftStickX: 0,
@@ -50,14 +50,14 @@ onMounted(() => {
     <div class="cabinet-section">
       <div class="cabinet-content">
         <component class="gamepad-button-small dualshock" :is="commun.empty" />
-        <component class="gamepad-button-small dualshock" :is="gamepadData.leftTrigger ? dualshock4.l2_press : dualshock4.l2_release" />
+        <component class="gamepad-button-small dualshock" :is="gamepadData.leftTrigger > 0 ? dualshock4.l2_press : dualshock4.l2_release" />
         <component class="gamepad-button-small dualshock" :is="gamepadData.leftShoulder ? dualshock4.l1_press : dualshock4.l1_release" />
         <component class="gamepad-button-small dualshock" :is="commun.empty" />
         <component class="gamepad-button-small dualshock" :is="gamepadData.buttonSelect ? dualshock4.share_press : dualshock4.share_release" />
         <component class="gamepad-button-small dualshock" :is="gamepadData.buttonStart ? dualshock4.options_press : dualshock4.options_release" />
         <component class="gamepad-button-small dualshock" :is="commun.empty" />
         <component class="gamepad-button-small dualshock" :is="gamepadData.rightShoulder ? dualshock4.r1_press : dualshock4.r1_release" />
-        <component class="gamepad-button-small dualshock" :is="gamepadData.rightTrigger ? dualshock4.r2_press : dualshock4.r2_release" />
+        <component class="gamepad-button-small dualshock" :is="gamepadData.rightTrigger > 0 ? dualshock4.r2_press : dualshock4.r2_release" />
         <component class="gamepad-button-small dualshock" :is="commun.empty" />
       </div>
     </div>
