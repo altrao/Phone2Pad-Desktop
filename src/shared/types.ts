@@ -28,5 +28,8 @@ export type GamepadData = {
 
     buttonStart: boolean;
     buttonSelect: boolean;
+
+    // Guide / Xbox / PS button. Optional: the Unity client doesn't send it.
+    ps?: boolean;
 }
 

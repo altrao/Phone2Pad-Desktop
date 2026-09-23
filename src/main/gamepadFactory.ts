@@ -62,6 +62,7 @@ async function xboxInput(gamepadID: number, gamepadData: GamepadData, delayCount
 
   xbox.input_back(gamepadID, gamepadData.buttonSelect);
   xbox.input_start(gamepadID, gamepadData.buttonStart);
+  xbox.input_guide(gamepadID, !!gamepadData.ps);
 
   if(delayCounter) {
     delayCounter();
@@ -126,6 +127,7 @@ async function dualShockInput(gamepadID: number, gamepadData: GamepadData, delay
 
   dualshock4.input_share(gamepadID, gamepadData.buttonSelect);
   dualshock4.input_options(gamepadID, gamepadData.buttonStart);
+  dualshock4.input_ps(gamepadID, !!gamepadData.ps);
 
   if(delayCounter) {
     delayCounter();
