@@ -25,6 +25,8 @@ declare global {
       get_server_ip: () => Promise<string>
       getMaxGamepads: () => Promise<number>
       write_to_log: (callback: (event: Event, message: string) => void) => void
+      onLog: (callback: (event: Event, data: { level: string, message: string }) => void) => void
+      openLogFolder: () => Promise<string>
       start_wss: (port: number) => Promise<void>
       stop_wss: () => Promise<void>
 

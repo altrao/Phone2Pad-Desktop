@@ -14,6 +14,7 @@ import { GamepadData } from '../shared/types'
 import { GamepadType } from '../shared/enums'
 import { vigem_error } from './ffi'
 import { getMaxConnections } from './index'
+import { log, logThrottled, clearThrottle } from './logger'
 
 interface WebSocketMessage {
   action: 'handshake_ack' | 'register_ack' | 'delay_test_request' | 'delay_test_end' | 'error'
@@ -175,7 +176,7 @@ function startServer(portNumber?: number): void {
 
     wss.on('error', (error: any) => {
       if (error.code === 'EADDRINUSE') {
-        console.log(`Port ${currentPort} is in use, trying ${currentPort + 1}`)
+        log('warn', `Port ${currentPort} is in use, trying ${currentPort + 1}`)
         wss = null
         tryStartServer(currentPort + 1)
       } else {
@@ -183,30 +184,31 @@ function startServer(portNumber?: number): void {
           status: 'error',
           error: error.message
         } as ServerStatus)
-        console.error(`WebSocket server error: ${error.message}`)
+        log('error', `WebSocket server error: ${error.message}`)
       }
     })
 
     wss.on('listening', async () => {
       port = currentPort
+      log('info', `Server listening on port ${port} (${getLocalIpAddresses().join(', ')})`)
       const error = await initializeGamepadSystem()
 
       if (error === vigem_error.VIGEM_ERROR_NONE) {
-        console.log('Sending started status');
+        log('info', 'ViGEm initialized, server started');
         mainWindow?.webContents.send('server-status', {
           status: 'started',
           port: port
         })
       } else {
         if (error === vigem_error.VIGEM_ERROR_BUS_NOT_FOUND) {
-          console.log('Sending VIGEM_ERROR_BUS_NOT_FOUND status');
+          log('error', 'ViGEm bus not found (driver not installed?)');
           mainWindow?.webContents.send('server-status', {
             status: 'error',
             error: 'VIGEM_ERROR_BUS_NOT_FOUND',
             shouldDownload: true
           } as ServerStatus)
         } else {
-          console.log('Sending unknown error status');
+          log('error', `ViGEm initialize failed: ${vigem_error[error] ?? error}`);
           mainWindow?.webContents.send('server-status', {
             status: 'error',
             error: 'Unknown'
@@ -225,6 +227,7 @@ function startServer(portNumber?: number): void {
     wss.on('connection', (ws, req) => {
       const clientIp = req.socket.remoteAddress
       connections.add(ws)
+      log('info', `Client connected: ${clientIp} (total ${connections.size})`)
 
       mainWindow?.webContents.send('client-connected', {
         ip: clientIp,
@@ -244,17 +247,22 @@ function startServer(portNumber?: number): void {
         }
       })
 
-      ws.on('close', () => {
+      ws.on('close', (code) => {
+        // Unregistered sockets must leave the set too, or they eat max-connection slots.
+        connections.delete(ws)
+        let releasedId: number | null = null
         for (const [id, data] of clientMap.entries()) {
           const _ws = data.websocket
           if (_ws === ws) {
             releaseGamepad(data.clientId)
             mainWindow?.webContents.send('gamepad:disconnected', { id: data.clientId })
             clientMap.delete(id)
-            connections.delete(ws)
+            clearThrottle(`client:${id}:`)
+            releasedId = id
             break
           }
         }
+        log('info', `Client closed: ${clientIp} code=${code} gamepad=${releasedId ?? 'none'} (total ${connections.size})`)
       })
     })
   }
@@ -281,8 +289,27 @@ function stopServer() {
 }
 
 async function handleWebSocketMessage(ws: WebSocket, message: any, clientIp: string) {
+  let decoded: WebSocketGamepadPayload | WebSocketPingPayload
   try {
-    const decoded = decode(message) as WebSocketGamepadPayload | WebSocketPingPayload
+    decoded = decode(message) as WebSocketGamepadPayload | WebSocketPingPayload
+  } catch (err) {
+    const bytes = Buffer.isBuffer(message) ? message : Buffer.from(message as ArrayBuffer)
+    logThrottled(
+      `decode:${clientIp}`,
+      'error',
+      `MessagePack decode failed from ${clientIp} (${bytes.length} bytes): ${err} | head=${bytes.subarray(0, 48).toString('hex')}`
+    )
+    mainWindow?.webContents.send('message-error', {
+      error: 'Invalid MessagePack format',
+      rawMessage: message
+    })
+    return
+  }
+
+  try {
+    if (decoded?.action !== 'input') {
+      log('info', `<- ${clientIp} ${decoded?.action} id=${decoded?.id} ${(decoded as WebSocketGamepadPayload)?.gamepadType ?? ''}`)
+    }
 
     switch (decoded?.action) {
       case 'handshake':
@@ -306,6 +333,7 @@ async function handleWebSocketMessage(ws: WebSocket, message: any, clientIp: str
         break
 
       default:
+        logThrottled(`unknown:${clientIp}`, 'warn', `Unknown action from ${clientIp}: ${JSON.stringify(decoded)?.slice(0, 200)}`)
         const response: WebSocketMessage = {
           action: 'error',
           status: 'error',
@@ -314,11 +342,7 @@ async function handleWebSocketMessage(ws: WebSocket, message: any, clientIp: str
         ws.send(encode(response))
     }
   } catch (err) {
-    console.error('Failed to decode incoming message:', err)
-    mainWindow?.webContents.send('message-error', {
-      error: 'Invalid MessagePack format',
-      rawMessage: message
-    })
+    log('error', `Failed to handle '${decoded?.action}' from ${clientIp}: ${err}`)
   }
 
   async function handleHandshake(ws: WebSocket, clientIp: string): Promise<void> {
@@ -328,7 +352,8 @@ async function handleWebSocketMessage(ws: WebSocket, message: any, clientIp: str
         status: 'error',
         payload: 'E_MAX_CONN'
       }
-      
+      log('warn', `Rejected ${clientIp}: max connections (${connections.size}/${getMaxConnections()})`)
+
       ws.send(encode(response))
       ws.close()
       return;
@@ -339,13 +364,13 @@ async function handleWebSocketMessage(ws: WebSocket, message: any, clientIp: str
       status: 'ok',
       payload: 'ok'
     }
-    mainWindow?.webContents.send('write-log', `Client connected: ${clientIp}`)
     ws.send(encode(response))
   }
 
   async function handleDisconnect(_: WebSocket, payload: WebSocketGamepadPayload): Promise<void> {
     const { id } = payload
     clientMap.delete(id as number)
+    clearThrottle(`client:${id}:`)
 
     releaseGamepad(id as number)
 
@@ -371,10 +396,7 @@ async function handleWebSocketMessage(ws: WebSocket, message: any, clientIp: str
     // Send a delay test message to the client
     sendMessageToClient(clientId, 'delay_test_request')
 
-    mainWindow?.webContents.send(
-      'write-log',
-      `Client: ${clientIp} assigned id ${clientId} as ${payload.gamepadType as GamepadType}`
-    )
+    log('info', `Gamepad created: ${clientIp} -> id ${clientId} as ${payload.gamepadType}`)
 
     // Send gamepad:registered event to renderer
     mainWindow?.webContents.send('gamepad:registered', {
@@ -398,7 +420,14 @@ async function handleWebSocketMessage(ws: WebSocket, message: any, clientIp: str
       }
     }
 
+    logThrottled(
+      `client:${id}:input`,
+      'info',
+      `Input id=${id} type=${gamepadType} registered=${clientMap.has(id as number)} data=${JSON.stringify(gamepadData)}`
+    )
+
     if (id === -1 || !gamepadType || !gamepadData) {
+      logThrottled(`client:${id}:bad-input`, 'warn', `Input from ${clientIp} missing id, gamepadType or gamepadData`)
       const response: WebSocketMessage = {
         action: 'error',
         status: 'error',
@@ -419,6 +448,8 @@ async function handleWebSocketMessage(ws: WebSocket, message: any, clientIp: str
       if (!mainWindow?.isMinimized()) {
         mainWindow?.webContents.send('gamepad:input-dualshock', { id, gamepadData })
       }
+    } else {
+      logThrottled(`client:${id}:bad-type`, 'warn', `Input id=${id} has unknown gamepadType '${gamepadType}'`)
     }
   }
 
@@ -437,7 +468,7 @@ async function handleWebSocketMessage(ws: WebSocket, message: any, clientIp: str
     const rtt = (T4 - T1 - (T3 - T2)) / 2
 
     clientMap.get(id as number)!.rtt = rtt
-    mainWindow?.webContents.send('write-log', `Client: ${clientIp} has delay of ${rtt}ms`)
+    log('info', `Client ${clientIp} (id ${id}) rtt ${rtt}ms`)
   }
 }
 

@@ -133,6 +133,8 @@ app.whenReady().then(() => {
     return result;
   });
 
+  ipcMain.handle('log:open-folder', () => shell.openPath(app.getPath('logs')));
+
   ipcMain.handle('get:max-gamepads', () => {
     return MAX_GAMEPADS;
   });

@@ -21,8 +21,12 @@ const api = {
   confirmWindowClose: (shouldClose: boolean) => ipcRenderer.send('window:close-confirm', shouldClose),
   minimizeWindow: () => ipcRenderer.send('window:minimize'),
 
-  write_to_log: (callback: (event: Electron.IpcRendererEvent, message: string) => void) => 
+  write_to_log: (callback: (event: Electron.IpcRendererEvent, message: string) => void) =>
     ipcRenderer.on('write-log', callback),
+
+  onLog: (callback: (event: Electron.IpcRendererEvent, data: { level: string, message: string }) => void) =>
+    ipcRenderer.on('log:line', callback),
+  openLogFolder: () => ipcRenderer.invoke('log:open-folder'),
     
   onGamepadRegistered: (callback: (event: Electron.IpcRendererEvent, data: { clientId: number, gamepadType: string }) => void) =>
     ipcRenderer.on('gamepad:registered', callback),

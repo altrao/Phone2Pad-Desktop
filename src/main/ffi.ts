@@ -1,6 +1,7 @@
 import koffi from 'koffi';
 import path from 'path';
 import { app } from 'electron';
+import { logThrottled } from './logger';
 
 // Helper function to get the correct DLL path
 function getDllPath(): string {
@@ -108,6 +109,25 @@ enum vigem_error {
   VIGEM_ERROR_WINAPI = 0xE0000017,
   VIGEM_ERROR_TIMED_OUT = 0xE0000018,
   VIGEM_ERROR_IS_DISPOSING = 0xE0000019,
+}
+
+// Log every native call that throws or returns a ViGEm error (throttled per function).
+for (const group of [system, xbox, dualshock4] as Record<string, (...args: any[]) => any>[]) {
+  for (const [name, fn] of Object.entries(group)) {
+    group[name] = (...args: any[]) => {
+      try {
+        const result = fn(...args);
+        if (result && result.error !== 0 && result.error !== vigem_error.VIGEM_ERROR_NONE) {
+          const code = vigem_error[result.error] ?? `0x${(result.error >>> 0).toString(16)}`;
+          logThrottled(`ffi:${name}`, 'error', `DLL ${name}(${args.join(', ')}) failed: status=${result.status} error=${code}`);
+        }
+        return result;
+      } catch (err) {
+        logThrottled(`ffi:${name}`, 'error', `DLL ${name}(${args.join(', ')}) threw: ${err}`);
+        throw err;
+      }
+    };
+  }
 }
 
 export {

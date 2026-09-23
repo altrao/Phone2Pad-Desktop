@@ -16,6 +16,7 @@ import DownloadModal from './components/DownloadModal.vue'
 import HelpModal from './components/HelpModal.vue'
 import SponsorModal from './components/SponsorModal.vue'
 import CloseConfirmModal from './components/CloseConfirmModal.vue'
+import LogPanel from './components/LogPanel.vue'
 
 const sessionIP = ref("No internet connection");
 const sessionPort = ref("No internet connection");
@@ -39,6 +40,14 @@ const downloadModalRef = ref()
 const helpModalRef = ref()
 const sponsorModalRef = ref()
 const closeConfirmModalRef = ref()
+const logPanelRef = ref()
+const showDebug = ref(false)
+const openLogFolder = () => window.api.openLogFolder()
+
+// Always collect (panel stays mounted via v-show) so opening Debug shows history.
+window.api.onLog((_, data) => {
+  logPanelRef.value?.addLog(data.message, data.level)
+})
 
 const { locale } = useI18n();
 
@@ -213,6 +222,13 @@ const handleSponsorClick = () => {
               </el-button>
             </el-col>
           </el-row>
+          <el-row :gutter="10" justify="center" style="margin-top: 10px;">
+            <el-col :span="24">
+              <el-button size="small" :type="showDebug ? 'warning' : 'info'" plain @click="showDebug = !showDebug">
+                Debug
+              </el-button>
+            </el-col>
+          </el-row>
         </div>
       </div>
     </el-aside>
@@ -283,6 +299,16 @@ const handleSponsorClick = () => {
   <HelpModal ref="helpModalRef" />
   <SponsorModal ref="sponsorModalRef" />
   <CloseConfirmModal ref="closeConfirmModalRef" />
+  <div v-show="showDebug" class="debug-panel">
+    <LogPanel ref="logPanelRef" :max-lines="500">
+      <template #header>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <strong>Debug log</strong>
+          <el-button size="small" @click="openLogFolder">Open log folder</el-button>
+        </div>
+      </template>
+    </LogPanel>
+  </div>
 </template>
 
 <style>
@@ -459,6 +485,14 @@ body {
   100% {
     transform: scale(1);
   }
+}
+
+.debug-panel {
+  position: fixed;
+  left: 300px;
+  right: 0;
+  bottom: 0;
+  z-index: 2000;
 }
 
 .connected-devices-info {
