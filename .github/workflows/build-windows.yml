@@ -1,0 +1,51 @@
+name: Build Windows Installer
+
+on:
+  push:
+  workflow_dispatch:
+
+concurrency:
+  group: windows-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows:
+    name: Windows (NSIS installer)
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # postinstall hook runs: electron-builder install-app-deps
+      - name: Install dependencies
+        run: npm ci
+
+      # Skips `npm run typecheck` (vue-tsc) on purpose -- a type error must not
+      # block the installer. Swap to `npm run build` once typecheck is clean.
+      - name: Build application
+        run: npx electron-vite build
+
+      # NO --config flag on purpose. package.json's `build` key is the real
+      # config and is the only one that bundles dlls/ and unpacks koffi.
+      # Passing electron-builder.yml silently produces an installer with no DLLs.
+      - name: Package installer
+        run: npx electron-builder --win --x64 --publish never
+
+      - name: List output
+        if: always()
+        run: Get-ChildItem -Recurse dist_electron | Select-Object FullName, Length
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Phone2Pad-Desktop-Windows
+          path: |
+            dist_electron/*.exe
+            dist_electron/*.exe.blockmap
+            dist_electron/*.yml
+          if-no-files-found: error
+          retention-days: 30
