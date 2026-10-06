@@ -8,21 +8,37 @@ async function initializeGamepadSystem(): Promise<vigem_error> {
     return result.error;
 }
 
-async function createGamepad(type: GamepadType): Promise<number> {
-    const idBuffer = Buffer.alloc(4);
+// The first create after boot can fail with BUS_NOT_FOUND while the ViGEm bus wakes up,
+// so re-initialize and retry. Throws if it never succeeds: the id buffer is then
+// garbage (0), and feeding input to that id crashes the native DLL.
+async function createGamepad(type: GamepadType, attempts = 3): Promise<number> {
+    let error: vigem_error = vigem_error.VIGEM_ERROR_NONE;
 
-    if (type === GamepadType.Xbox) {
-        await xbox.create(idBuffer);
-    }
-    else if (type === GamepadType.DualShock) {
-        await dualshock4.create(idBuffer);
-    } else {
-        throw new Error(`Unsupported gamepad type: ${type}`);
+    for (let attempt = 1; attempt <= attempts; attempt++) {
+        const idBuffer = Buffer.alloc(4);
+
+        let result;
+        if (type === GamepadType.Xbox) {
+            result = await xbox.create(idBuffer);
+        }
+        else if (type === GamepadType.DualShock) {
+            result = await dualshock4.create(idBuffer);
+        } else {
+            throw new Error(`Unsupported gamepad type: ${type}`);
+        }
+
+        error = result.error;
+        if ((error as number) === 0 || error === vigem_error.VIGEM_ERROR_NONE) {
+            return idBuffer.readInt32LE();
+        }
+
+        if (attempt < attempts) {
+            await new Promise((resolve) => setTimeout(resolve, 500));
+            await initializeGamepadSystem();
+        }
     }
 
-    const id = idBuffer.readInt32LE();
-    
-    return id;
+    throw new Error(`create ${type} failed after ${attempts} attempts: ${vigem_error[error] ?? error}`);
 }
 
 // // Release xbox gamepad with the given ID

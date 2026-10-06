@@ -382,7 +382,20 @@ async function handleWebSocketMessage(ws: WebSocket, message: any, clientIp: str
     clientIp: string,
     payload: WebSocketGamepadPayload
   ): Promise<void> {
-    const clientId = await createGamepad(payload.gamepadType as GamepadType)
+    let clientId: number
+    try {
+      clientId = await createGamepad(payload.gamepadType as GamepadType)
+    } catch (err) {
+      log('error', `Gamepad creation failed for ${clientIp}: ${err}`)
+      const failed: WebSocketMessage = {
+        action: 'register_ack',
+        status: 'error',
+        payload: 'E_CREATE_FAILED'
+      }
+      ws.send(encode(failed))
+      return
+    }
+
     const response: WebSocketMessage = {
       action: 'register_ack',
       status: 'ok',
@@ -425,6 +438,12 @@ async function handleWebSocketMessage(ws: WebSocket, message: any, clientIp: str
       'info',
       `Input id=${id} type=${gamepadType} registered=${clientMap.has(id as number)} data=${JSON.stringify(gamepadData)}`
     )
+
+    // Never hand the DLL an id it didn't issue: an unknown target crashes the process.
+    if (!client) {
+      logThrottled(`client:${id}:unregistered`, 'warn', `Dropping input from ${clientIp} for unregistered id ${id}`)
+      return
+    }
 
     if (id === -1 || !gamepadType || !gamepadData) {
       logThrottled(`client:${id}:bad-input`, 'warn', `Input from ${clientIp} missing id, gamepadType or gamepadData`)
