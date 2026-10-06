@@ -21,6 +21,7 @@ import { GamepadType } from '../shared/enums'
 
 import icon from '../../resources/icon.png?asset'
 import { system } from './ffi';
+import { setFileLogging } from './logger';
 
 import { initializeGamepadSystem, createGamepad } from './gamepadFactory'
 import { getClientMap } from './websocket'
@@ -134,6 +135,7 @@ app.whenReady().then(() => {
   });
 
   ipcMain.handle('log:open-folder', () => shell.openPath(app.getPath('logs')));
+  ipcMain.on('log:set-debug', (_, enabled: boolean) => setFileLogging(enabled));
 
   ipcMain.handle('get:max-gamepads', () => {
     return MAX_GAMEPADS;

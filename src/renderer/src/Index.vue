@@ -5,7 +5,7 @@ import '../../../node_modules/element-plus/dist/index.css'
 import { ElContainer, ElHeader, ElMain, ElAside, ElSpace, ElButton, ElRow, ElCol, ElIcon, ElScrollbar, ElText } from 'element-plus'
 import { InfoFilled, QuestionFilled, Document, Download, Star } from '@element-plus/icons-vue'
 
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import QRCode from 'qrcode'
@@ -41,7 +41,12 @@ const helpModalRef = ref()
 const sponsorModalRef = ref()
 const closeConfirmModalRef = ref()
 const logPanelRef = ref()
-const showDebug = ref(false)
+// Remembered across restarts so the first connection after launch is captured too.
+const showDebug = ref(localStorage.getItem('debug_enabled') === 'true')
+watch(showDebug, (enabled) => {
+  localStorage.setItem('debug_enabled', String(enabled))
+  window.api.setDebug(enabled)
+}, { immediate: true })
 const openLogFolder = () => window.api.openLogFolder()
 
 // Always collect (panel stays mounted via v-show) so opening Debug shows history.

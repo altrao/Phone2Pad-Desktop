@@ -27,6 +27,7 @@ const api = {
   onLog: (callback: (event: Electron.IpcRendererEvent, data: { level: string, message: string }) => void) =>
     ipcRenderer.on('log:line', callback),
   openLogFolder: () => ipcRenderer.invoke('log:open-folder'),
+  setDebug: (enabled: boolean) => ipcRenderer.send('log:set-debug', enabled),
     
   onGamepadRegistered: (callback: (event: Electron.IpcRendererEvent, data: { clientId: number, gamepadType: string }) => void) =>
     ipcRenderer.on('gamepad:registered', callback),

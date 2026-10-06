@@ -1,6 +1,7 @@
 import { system, xbox, dualshock4, vigem_error } from './ffi';
 import { GamepadType } from '../shared/enums'
 import { GamepadData } from '../shared/types'
+import { log } from './logger'
 
 async function initializeGamepadSystem(): Promise<vigem_error> {
     const result = await system.initialize();
@@ -8,14 +9,17 @@ async function initializeGamepadSystem(): Promise<vigem_error> {
     return result.error;
 }
 
-// The first create after boot can fail with BUS_NOT_FOUND while the ViGEm bus wakes up,
-// so re-initialize and retry. Throws if it never succeeds: the id buffer is then
-// garbage (0), and feeding input to that id crashes the native DLL.
+// The first create after boot can fail with BUS_NOT_FOUND (~1s timeout) even though
+// Windows does plug the device in, so retry. Throws if it never succeeds: input to
+// the id of a failed create crashes the native DLL.
+// ponytail: the failed attempt may leave a ghost controller plugged in until exit;
+// release it once the log shows whether the DLL hands out an id on failure.
 async function createGamepad(type: GamepadType, attempts = 3): Promise<number> {
     let error: vigem_error = vigem_error.VIGEM_ERROR_NONE;
 
     for (let attempt = 1; attempt <= attempts; attempt++) {
         const idBuffer = Buffer.alloc(4);
+        idBuffer.writeInt32LE(-1); // sentinel: tells us if the DLL wrote an id despite failing
 
         let result;
         if (type === GamepadType.Xbox) {
@@ -32,9 +36,9 @@ async function createGamepad(type: GamepadType, attempts = 3): Promise<number> {
             return idBuffer.readInt32LE();
         }
 
+        log('warn', `create ${type} attempt ${attempt}/${attempts} failed: ${vigem_error[error] ?? error}, id written=${idBuffer.readInt32LE()}`);
         if (attempt < attempts) {
             await new Promise((resolve) => setTimeout(resolve, 500));
-            await initializeGamepadSystem();
         }
     }
 

@@ -27,6 +27,7 @@ declare global {
       write_to_log: (callback: (event: Event, message: string) => void) => void
       onLog: (callback: (event: Event, data: { level: string, message: string }) => void) => void
       openLogFolder: () => Promise<string>
+      setDebug: (enabled: boolean) => void
       start_wss: (port: number) => Promise<void>
       stop_wss: () => Promise<void>
 

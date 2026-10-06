@@ -5,21 +5,32 @@ import { join } from 'path'
 export type LogLevel = 'info' | 'warn' | 'error'
 
 let stream: WriteStream | null = null
+let fileLogging = false
 
 function getLogFilePath(): string {
   return join(app.getPath('logs'), 'main.log')
 }
 
-// Console + <logs>/main.log + every renderer window ('log:line').
+// Toggled by the renderer's Debug switch.
+function setFileLogging(enabled: boolean): void {
+  if (enabled === fileLogging) return
+  if (!enabled) log('info', 'File logging disabled')
+  fileLogging = enabled
+  if (enabled) log('info', `File logging enabled: ${getLogFilePath()}`)
+}
+
+// Console + every renderer window ('log:line') + <logs>/main.log while debug is on.
 function log(level: LogLevel, message: string): void {
   const line = `${new Date().toISOString()} [${level}] ${message}`
   ;(level === 'info' ? console.log : console[level])(line)
 
-  try {
-    stream ??= createWriteStream(getLogFilePath(), { flags: 'a' })
-    stream.write(line + '\n')
-  } catch {
-    // Logging must never take the server down.
+  if (fileLogging) {
+    try {
+      stream ??= createWriteStream(getLogFilePath(), { flags: 'a' })
+      stream.write(line + '\n')
+    } catch {
+      // Logging must never take the server down.
+    }
   }
 
   for (const win of BrowserWindow.getAllWindows()) {
@@ -48,4 +59,4 @@ function clearThrottle(keyPrefix: string): void {
   }
 }
 
-export { log, logThrottled, clearThrottle }
+export { log, logThrottled, clearThrottle, setFileLogging }
